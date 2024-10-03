@@ -1,0 +1,14 @@
+# VaultConnection:
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  annotations:
+    meta.helm.sh/release-name: service-test
+    meta.helm.sh/release-namespace: service-test
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: service-test
+  namespace: service-test
+spec:
+  address: http://vault.vault.svc:8200 # Адрес Vault кластера (внутренний адрес в Kubernetes)
+  skipTLSVerify: true # пропуск валидации TLS (тестовое окружение)

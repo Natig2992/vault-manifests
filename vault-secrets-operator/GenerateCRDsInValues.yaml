@@ -1,0 +1,10 @@
+vaultSecretOperator:
+  enabled: true
+  name: $CI_PROJECT_NAME-$ENVIRONMENT
+  vaultAddress: http://vault.vault.svc:8200
+  vaultPath: $ENVIRONMENT/ory/$CI_PROJECT_NAME-$ENVIRONMENT
+  destination:
+    name: $CI_PROJECT_NAME-$ENVIRONMENT-secret
+  auth:
+    role: $CI_PROJECT_NAME-$ENVIRONMENT
+    serviceAccount: $CI_PROJECT_NAME-$ENVIRONMENT

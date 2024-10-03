@@ -1,0 +1,19 @@
+# VaultAuth:
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  annotations:
+    meta.helm.sh/release-name: service-test
+    meta.helm.sh/release-namespace: service-test
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  name: service-test
+  namespace: service-test
+spec:
+  kubernetes:
+    role: service-test # название роли для авторизации в Vault (предварительно создана в Vault)
+    serviceAccount: service-test # Имя сервис аккаунта, с которым проходит авторизация в Vault
+    tokenExpirationSeconds: 600 # Время истечения токена - 10 минут
+  method: kubernetes # метод авторизации Kubernetes
+  mount: kubernetes # точка монтирования kubernetes для метода авторизации Kubernetes соответственно
+  vaultConnectionRef: service-test # ссылка на ресурс "VaultConnection", в котором  указано куда подключаться

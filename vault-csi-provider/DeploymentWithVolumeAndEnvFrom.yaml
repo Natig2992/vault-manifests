@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-test
+  namespace: service-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: service-test
+      app.kubernetes.io/name: service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: service-test
+        app.kubernetes.io/name: service
+    spec:
+      volumes:
+        - name: secrets-store-service-test-csi
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: service-test-csi # имя SecretProviderClass
+      containers:
+        - name: service-test
+          image: sregistry.test.ru/test-services/service-test:latest
+          envFrom:
+            - secretRef:
+                name: service-test-secret # результирующий  Opaque Secret, 
+                #созданный с помощью CR SecretProviderClass
+          volumeMounts:
+            - name: secrets-store-service-test-csi
+              readOnly: true
+              mountPath: /mnt/secrets/service-test
+
+---
+volumes:
+  - name: secrets-store-test-service
+    csi:
+    driver: secrets-store.csi.k8s.io
+    readOnly: true
+    volumeAttributes:
+      secretProviderClass: service-test-csi # имя SecretProviderClass
+
+volumeMounts:
+  - name: secrets-store-test-service
+    readOnly: true
+    mountPath: /mnt/secrets/service-test-secret

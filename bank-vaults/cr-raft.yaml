@@ -1,0 +1,74 @@
+apiVersion: "vault.banzaicloud.com/v1alpha1"
+kind: "Vault"
+metadata:
+  name: "vault"
+  labels:
+    app.kubernetes.io/name: vault
+    vault_cr: vault
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: vault-raft
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        volumeMode: Filesystem
+        resources:
+          requests:
+            storage: 5Gi
+
+  volumeMounts:
+    - name: vault-raft
+      mountPath: /vault/file
+  veleroEnabled: true
+
+  caNamespaces:
+    - "*"
+
+  unsealConfig:
+    options:
+      preFlightChecks: true
+      storeRootToken: true
+      secretShares: 5
+      secretThreshold: 3
+    kubernetes:
+      secretNamespace: {{ .Release.Namespace }}
+
+  config:
+    storage:
+      raft:
+        path: "/vault/file"
+    listener:
+      tcp:
+        address: "0.0.0.0:8200"
+        tls_disable: true
+    api_addr: http://vault:8200
+    cluster_addr: "http://${.Env.POD_NAME}:8201"
+    ui: true
+
+  externalConfig:
+    policies:
+      - name: allow_secrets
+        rules: |
+          path "secret/*" {
+            capabilities = ["create", "read", "update", "delete", "list"]
+          }
+    auth:
+      - type: kubernetes
+        roles:
+          - name: kubernetes
+            bound_service_account_names: vault
+            bound_service_account_namespaces: vault
+            policies: allow_secrets
+            ttl: 30s
+
+    secrets:
+      - path: secret
+        type: kv
+        description: General secrets kvv2.
+        options:
+          version: 2
+
+  statsdDisabled: true
+
+  serviceRegistrationEnabled: true

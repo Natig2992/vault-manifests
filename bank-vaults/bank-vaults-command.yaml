@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vault-1
+  namespace: vault
+spec:
+  volumes:
+    - name: vault-raft
+      persistentVolumeClaim:
+        claimName: vault-raft-vault-1
+    - name: vault-config
+      emptyDir:
+        medium: Memory
+        sizeLimit: 1Mi
+    - name: vault-raw-config
+      secret:
+        secretName: vault-raw-config
+        defaultMode: 420
+  # Сайдкарный контейнер, который отвечает за autounseal узлов Vault кластера:
+  containers:
+    - name: bank-vaults
+      image: ghcr.io/bank-vaults/bank-vaults:v1.31.0
+      command:
+        - bank-vaults
+        - unseal
+        - '--init'
+        - '--raft'
+        - '--raft-leader-address'
+        - http://vault:8200
+      args:
+        - '--secret-shares'
+        - '5'
+        - '--secret-threshold'
+        - '3'
+        - '--mode'
+        - k8s
+        - '--k8s-secret-namespace'
+        - vault
+        - '--k8s-secret-name' # секрет с зарезервированным названием "vault-unseal-keys"
+        - vault-unseal-keys # который хранит root и unseal токены для распечатывания
+        - '--k8s-secret-labels'
+        - app.kubernetes.io/name=vault,vault_cr=vault
+      env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: VAULT_ADDR
+          value: http://127.0.0.1:8200
+      resources:
+        limits:
+          cpu: 200m
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 64Mi
+      volumeMounts:
+        - name: kube-api-access-vxpgk
+          readOnly: true
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      imagePullPolicy: IfNotPresent

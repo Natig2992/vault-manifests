@@ -1,0 +1,25 @@
+# Указываем аннотации и env в Deployment микросервиса:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vault-test
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vault-test
+  template:
+    metadata:
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: "http://vault.vault.svc:8200" # адрес кластера Vault
+        vault.security.banzaicloud.io/vault-role: "default" # по дефолту это имя сервисного аккаунта
+        vault.security.banzaicloud.io/vault-skip-verify: "true" # пропустить проверку подлинности TLS
+        vault.security.banzaicloud.io/vault-tls-secret: "vault-tls" # секрет с Vault CA cert (при условии false для предыдущей аннотации)
+        vault.security.banzaicloud.io/vault-agent: "false" # если указываем true, будет стартовать Vault Agent для подключения к Vault(аутентификация),по умолчанию не требуется, и vault-env будет выполнять аутентификацию Vault на основе  serviceAccount Kubernetes
+        vault.security.banzaicloud.io/vault-path: "kubernetes" # точка монтирования для метода аутентификации "kubernets" (по дефолту kubernetes - можно явно НЕ указывать)
+    spec:
+      serviceAccountName: default
+      containers:
+      - name: alpine
+        env:
+        - name: SECRET_SERVICE_KEY
+          value: vault:secret/data/services/service-test#SECRET_SERVICE_KEY # строка обращения к Vault за значением секрета для передачи в env pod
